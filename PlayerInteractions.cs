@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.UI;
 
 public class PlayerInteractions : MonoBehaviour
 {
     private float interactDistance = 3f;
     public Animator anim;
 	public int state =0;
-
+    public wheelMenu wheelScript;
 
 	public GameObject LookAtUI;
     public GameObject interactUI;
@@ -67,11 +67,17 @@ public class PlayerInteractions : MonoBehaviour
 
 	public InteractionManager InteractScipt;
 
-
+    public GameObject UVglasses;
+    public GameObject CameraReady;
     // Use this for initialization
     void Start()
     {
-		InteractScipt = GameObject.Find ("InteractionManager").GetComponent<InteractionManager> ();
+        UVglasses = GameObject.Find("UVglasses");
+        UVglasses.SetActive(false);
+        CameraReady = GameObject.Find("CameraReady");
+        CameraReady.SetActive(false);
+        InteractScipt = GameObject.Find ("InteractionManager").GetComponent<InteractionManager> ();
+        wheelScript = GameObject.Find("Canvas").GetComponent<wheelMenu>();
         cupboardDoors = GameObject.FindGameObjectsWithTag("CupboardDoor");
         kitchenDrawers = GameObject.FindGameObjectsWithTag("KitchenDrawer");
         freezer = GameObject.FindGameObjectsWithTag("Freezer");
@@ -145,34 +151,108 @@ public class PlayerInteractions : MonoBehaviour
 		case 1:
 			LookingAtClue ();
 			break;
-		}
+        case 2:
+            UseTool();
+            break;
+        }
 
        
     }
-	public void LookingAtClue(){
-		GameObject ThisClue=InteractScipt.LookatClueScript.GetCurrentClue();
-		if (Input.GetKey ("a")) {
-			ThisClue.transform.Rotate(Vector3.left ,Time.deltaTime*150f);
-			Debug.Log("a pressed");
-		}
-		if (Input.GetKey ("d")) {
-			ThisClue.transform.Rotate(Vector3.right,Time.deltaTime*150f);
-			Debug.Log("d pressed");
-		}
-		if (Input.GetKey ("w")) {
-			ThisClue.transform.Rotate(Vector3.up,Time.deltaTime*150f);
-			Debug.Log("w pressed");
-		}
-		if (Input.GetKey ("s")) {
-			ThisClue.transform.Rotate(Vector3.down,Time.deltaTime*150f);
-			Debug.Log("s pressed");
-		}
-		if (Input.GetKey (KeyCode.Backspace)) {
-			InteractScipt.LookatClueScript.StopLooking();
-			InteractScipt.SetTypeOfInteraction("RemoveLookAtClue",null);
-			Debug.Log("Escape pressed");
-		}
-		if (Input.GetKeyDown("f")) {
+
+    void UseTool()
+    {
+        switch (wheelScript.CurrentItem)
+        {
+            case "Blacklight":
+               if (UVglasses.activeSelf == false)
+                {
+                    UVglasses.SetActive(true);
+
+                    transform.GetChild(1).gameObject.SetActive(true);
+                }
+                break;
+            case "Camera":
+                if (CameraReady.activeSelf == false)
+                {
+                    CameraReady.SetActive(true);                 
+                }
+                if (Input.GetKeyDown(KeyCode.Mouse0))
+                {
+                    InteractScipt.SetTypeOfInteraction("TakePicture", InteractScipt.LookatClueScript.CurrentObject);
+                }
+                if (Input.GetKey(KeyCode.Mouse1))
+                {
+                    if (GetComponent<Camera>().fieldOfView >= 30)
+                    {
+                        GetComponent<Camera>().fieldOfView -= 30 * Time.deltaTime;
+                    }
+
+                }
+                else {
+
+                    if (GetComponent<Camera>().fieldOfView <= 59)
+                    {
+                        GetComponent<Camera>().fieldOfView += 30 * Time.deltaTime;
+                    }
+                }
+                break;
+            case "Fingerprint":
+                break;
+            case "Swab":
+                break;
+
+        }
+        if(wheelScript.CurrentItem != "Blacklight")
+        {
+          if (UVglasses.activeSelf == true)
+            {
+                UVglasses.SetActive(false);
+        
+              transform.GetChild(1).gameObject.SetActive(false);
+            }
+        }
+        if (wheelScript.CurrentItem != "Camera")
+        {
+            if (CameraReady.activeSelf == true)
+            {
+                CameraReady.SetActive(false);
+
+               
+            }
+        }
+
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            state = 0;
+        }
+    }
+
+    public void LookingAtClue() {
+        GameObject ThisClue = InteractScipt.LookatClueScript.GetCurrentClue();
+        if (Input.GetKey("a")) {
+            ThisClue.transform.Rotate(Vector3.left, Time.deltaTime * 150f);
+            Debug.Log("a pressed");
+        }
+        if (Input.GetKey("d")) {
+            ThisClue.transform.Rotate(Vector3.right, Time.deltaTime * 150f);
+            Debug.Log("d pressed");
+        }
+        if (Input.GetKey("w")) {
+            ThisClue.transform.Rotate(Vector3.up, Time.deltaTime * 150f);
+            Debug.Log("w pressed");
+        }
+        if (Input.GetKey("s")) {
+            ThisClue.transform.Rotate(Vector3.down, Time.deltaTime * 150f);
+            Debug.Log("s pressed");
+        }
+        if (Input.GetKey(KeyCode.BackQuote)) {
+            InteractScipt.LookatClueScript.StopLooking();
+
+            InteractScipt.SetTypeOfInteraction("RemoveLookAtClue", null);
+            Debug.Log("Escape pressed");
+        }
+        
+        if (Input.GetKeyDown("f")) {
 			Debug.Log("f pressed");
 			InteractScipt.SetTypeOfInteraction("AddToInvo",InteractScipt.LookatClueScript.CurrentObject);
 			
@@ -183,7 +263,8 @@ public class PlayerInteractions : MonoBehaviour
 		//}
 
 	}
-		public void PlayerInteraction()
+
+	public void PlayerInteraction()
     {
         Debug.DrawRay(transform.position, transform.forward, Color.blue);
 
@@ -598,16 +679,16 @@ public class PlayerInteractions : MonoBehaviour
             {
                 interactUI.SetActive(true);
             }
-		
-			else if (hit2.collider.tag == "LeaveSceneTrigger")
+
+            else if (hit2.collider.tag == "LeaveSceneTrigger")
             {
                 interactUI.SetActive(true);
                 leaveCrimeSceneText.SetActive(true);
 
                 if (Input.GetKeyDown("e"))
                 {
-					InteractScipt.SetTypeOfInteraction("LeaveScene",hit2.transform.gameObject);
-                  	
+                    InteractScipt.SetTypeOfInteraction("LeaveScene", hit2.transform.gameObject);
+
                 }
             }
             //Disable UI element
@@ -616,17 +697,61 @@ public class PlayerInteractions : MonoBehaviour
                 interactUI.SetActive(false);
                 leaveCrimeSceneText.SetActive(false);
             }
-			Debug.Log("trying to look at " +hit2.collider.gameObject.name );
-			for(int i =0; i<GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded.Count;i++){
-				if (hit2.collider.gameObject.name  == GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded[i])
-				{interactUI.SetActive(true);
-					if (Input.GetKeyDown("e"))
-					{
-						InteractScipt.SetTypeOfInteraction("LookAtClue",hit2.transform.gameObject);
-						
-					}
-				}
-			}
+            Debug.Log("trying to look at " + hit2.collider.gameObject.name);
+            if (SceneManager.GetActiveScene().name == "CrimeScene1")
+            {
+                for (int i = 0; i < GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded.Count; i++)
+                {
+                    if (hit2.collider.gameObject.name == GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded[i])
+                    {
+                        interactUI.SetActive(true);
+                        if (Input.GetKeyDown("e"))
+                        {
+                            InteractScipt.SetTypeOfInteraction("LookAtClue", hit2.transform.gameObject);
+                            hit2.transform.gameObject.GetComponent<soundManager>().playNewSound();
+                        }
+                    }
+                }
+            }
+            if (SceneManager.GetActiveScene().name == "CrimeScene2")
+            {
+                for (int i = 0; i < GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded.Count; i++)
+                {
+                    if (hit2.collider.gameObject.name == GameObject.Find("MurderManager").GetComponent<TutLevelManager>().CluesNeeded[i])
+                    {
+                        interactUI.SetActive(true);
+                        if (Input.GetKeyDown("e"))
+                        {
+                            InteractScipt.SetTypeOfInteraction("LookAtClue", hit2.transform.gameObject);
+                            hit2.transform.gameObject.GetComponent<soundManager>().playNewSound();
+                        }
+                    }
+                }
+            }
+            if (SceneManager.GetActiveScene().name == "CrimeScene3")
+            {
+                for (int i = 0; i < GameObject.Find("MurderManager").GetComponent<RickApartmentManager>().CluesNeeded.Count; i++)
+                {
+                    if (hit2.collider.gameObject.tag == "LookAtClue")
+                    {
+                        interactUI.SetActive(true);
+                        if (Input.GetKeyDown("e"))
+                        {
+                            InteractScipt.SetTypeOfInteraction("LookAtClue", hit2.transform.gameObject);
+                            //hit2.transform.gameObject.GetComponent<soundManager>().playNewSound();
+                        }
+                    }
+                    if (hit2.collider.gameObject.tag == "Clue")
+                    {
+                        interactUI.SetActive(true);
+                        if (Input.GetKeyDown("e"))
+                        {
+                            InteractScipt.SetTypeOfInteraction("AddClueToInvo", hit2.transform.gameObject);
+
+                        }
+                    }
+                }
+            }
         }
     }
 }

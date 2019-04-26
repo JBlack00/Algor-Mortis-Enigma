@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class InteractionManager : MonoBehaviour {
@@ -9,7 +10,10 @@ public class InteractionManager : MonoBehaviour {
 	public PlayerInteractions PlayerScipt;
 	public LookAtClueClose LookatClueScript;
 	public OfficeAnimationManager OfficeAnimationManagerScript;
+    public CameraSnapShot CameraSnapShotScript;
 
+    public GameObject NewInvontoryItem;
+    public Transform TitlePos;
 
     public List<InstaInteraction> InstaInteractions;
     public List<WaitInteraction> WaitInteractions;
@@ -43,28 +47,42 @@ public class InteractionManager : MonoBehaviour {
 	}
 	void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 	{
+       
+        if (TitlePos == null)
+        {
 
-		FadeScript = GameObject.Find ("FullScreenOverlay").GetComponent<FadeToBlack> ();
+            TitlePos = GameObject.Find("UISpawnPos").transform;
+            TitlePos.gameObject.SetActive(false);
+            TitlePos.parent.GetComponent<Image>().enabled = true;
+        }
+        else
+        {
+            TitlePos = GameObject.Find("UISpawnPos").transform;
+            TitlePos.gameObject.SetActive(false);
+            TitlePos.parent.GetComponent<Image>().enabled = true;
+        }
+        NewInvontoryItem= Resources.Load("Prefabs/item", typeof(GameObject)) as GameObject;
+
+        FadeScript = GameObject.Find ("FullScreenOverlay").GetComponent<FadeToBlack> ();
 		if (GameObject.Find ("FPSCamera") != null) {
 			PlayerScipt = GameObject.Find ("FPSCamera").GetComponent<PlayerInteractions> ();
 			LookatClueScript = GameObject.Find ("FPSCamera").GetComponent<LookAtClueClose> ();
-		}
+            CameraSnapShotScript = GameObject.Find("FPSCamera").GetComponent<CameraSnapShot>();
+
+        }
 		if (GameObject.Find ("Main Camera") != null) {
 			OfficeAnimationManagerScript = GameObject.Find ("Main Camera").GetComponent<OfficeAnimationManager> ();
 		}
-	}
+        
+
+    }
 	// Use this for initialization
 	void Start () {
 		if (FindObjectsOfType(GetType()).Length > 1)
 		{
 			Destroy(gameObject);
 		}
-
-	
-
 		DontDestroyOnLoad (this.gameObject);
-
-
 	}
 	
 	// Update is called once per frame
@@ -125,30 +143,54 @@ public class InteractionManager : MonoBehaviour {
 				}
 			}
 			if(DoAdd){
-				temp.GetComponent<inventory>().invo.clueNames.Add(LookatClueScript.GetCurrentClue().name);
-			}else{
+			    temp.GetComponent<inventory>().invo.clueNames.Add(LookatClueScript.GetCurrentClue().name);
+                GameObject newItem = Instantiate(NewInvontoryItem, new Vector3(TitlePos.position.x, TitlePos.position.y-(120* (TitlePos.parent.transform.childCount-2)), TitlePos.position.z), Quaternion.identity, TitlePos.parent);
+                newItem.name = "item(" + LookatClueScript.GetCurrentClue().name + ")";
+                    newItem.transform.GetChild(1).GetComponent<Text>().text = LookatClueScript.GetCurrentClue().name;
+                     newItem.transform.GetComponentInChildren<Button>().onClick.AddListener(delegate{GameObject.Find("Canvas").GetComponent<UIinventory>().RemoveObjectFromInvo(newItem); });
+                    //newItem.transform.GetComponentInChildren<Button>().onClick.AddListener((delegate { RemoveObjectFromInvo(this.gameObject); }));
+                    Debug.Log(" found it" +newItem.transform.GetComponentInChildren<Button>());
+                }
+                else{
 				//invo allready has this item
 
 			}
 			break;
-		}
+            case "AddClueToInvo":
+
+                GameObject.Find("MurderManager").GetComponent<inventory>().invo.clueNames.Add(" MurderClue ");
+                GameObject newItem2 = Instantiate(NewInvontoryItem, new Vector3(TitlePos.position.x, TitlePos.position.y - (120 * (TitlePos.parent.transform.childCount - 2)), TitlePos.position.z), Quaternion.identity, TitlePos.parent);
+                newItem2.name = "item(" +" MurderClue "+ ")";
+                newItem2.transform.GetChild(1).GetComponent<Text>().text = " MurderClue ";
+                newItem2.transform.GetComponentInChildren<Button>().onClick.AddListener(delegate { GameObject.Find("Canvas").GetComponent<UIinventory>().RemoveObjectFromInvo(newItem2); });
+                    //newItem.transform.GetComponentInChildren<Button>().onClick.AddListener((delegate { RemoveObjectFromInvo(this.gameObject); }));
+                    Debug.Log(" found it" + newItem2.transform.GetComponentInChildren<Button>());
+            
+                break;
+            case "TakePicture":
+                CameraSnapShotScript.TakePhoto();
+                Debug.Log("SnapShot Took");
+                break;
+        }
 	}
-	
-	private void DoWaitInteraction(string InteractionString){
-		switch (InteractionString) {
-		case "LeaveScene":
-			WaitInteractions.RemoveAt(0);
-			WaitInteractionsCheckList.RemoveAt(0);
-			GameObject.Find ("Camera&Controller").GetComponent<vp_FPInput>().MouseCursorForced =true ;
-			SceneManager.LoadScene ("DetectiveOffice");
-			break;
-		case "FakeLeaveRoom":
-			WaitInteractions.RemoveAt(0);
-			WaitInteractionsCheckList.RemoveAt(0);
-			SceneManager.LoadScene("DetectiveOffice");
-			break;
-		}
-	}
+    
+    private void DoWaitInteraction(string InteractionString)
+    {
+        switch (InteractionString)
+        {
+            case "LeaveScene":
+                WaitInteractions.RemoveAt(0);
+                WaitInteractionsCheckList.RemoveAt(0);
+                GameObject.Find("Camera&Controller").GetComponent<vp_FPInput>().MouseCursorForced = true;
+                SceneManager.LoadScene("DetectiveOffice");
+                break;
+            case "FakeLeaveRoom":
+                WaitInteractions.RemoveAt(0);
+                WaitInteractionsCheckList.RemoveAt(0);
+                SceneManager.LoadScene("DetectiveOffice");
+                break;
+        }
+    }
 	public void SetTypeOfInteraction(string InteractionString, GameObject obj){
 		switch (InteractionString) {
 			case "LeaveScene":
@@ -172,13 +214,21 @@ public class InteractionManager : MonoBehaviour {
 				InstaInteractions.Add(new InstaInteraction(obj));
 				InstaInteractionsCheckList.Add("AddToInvo");
 			break;
-			case "FakeLeaveRoom":
+            case "AddClueToInvo":
+                InstaInteractions.Add(new InstaInteraction(obj));
+                InstaInteractionsCheckList.Add("AddClueToInvo");
+                break;
+            case "FakeLeaveRoom":
 				WaitInteractions.Add(new WaitInteraction(2f));
 				WaitInteractionsCheckList.Add("FakeLeaveRoom");
 				FadeScript.SetTimeToFade(true);
 				OfficeAnimationManagerScript.LookAtDoor(false);
 			break;
-		}
+            case "TakePicture":
+                InstaInteractions.Add(new InstaInteraction(obj));
+                InstaInteractionsCheckList.Add("TakePicture");
+                break;
+        }
 	}
 
 

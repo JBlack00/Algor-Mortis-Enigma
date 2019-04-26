@@ -18,7 +18,7 @@ public class OfficeAnimationManager : MonoBehaviour
     private bool open;
     private bool goToCrimeScene;
 
-
+    public SceneController SCscript;
     // Use this for initialization
     void Start ()
     {
@@ -30,6 +30,7 @@ public class OfficeAnimationManager : MonoBehaviour
         goToCrimeScene = false;
         interactUI.SetActive(false);
         travelToCrimeSceneText.SetActive(false);
+        SCscript = GameObject.Find("MurderManager").GetComponent<SceneController>();
     }
 	
 	// Update is called once per frame
@@ -132,7 +133,18 @@ public class OfficeAnimationManager : MonoBehaviour
     {
         if (Input.GetKeyDown("e") && goToCrimeScene == true)
         {
-            SceneManager.LoadScene("CrimeScene1");
+            if (SCscript.thisScene == "TUT")
+            {
+                SceneManager.LoadScene("CrimeScene1");
+            }
+            if (SCscript.thisScene == "NYapp")
+            {
+                SceneManager.LoadScene("CrimeScene2");
+            }
+            if (SCscript.thisScene == "BigApp")
+            {
+                SceneManager.LoadScene("CrimeScene3");
+            }
         }
     }
 	public void ShowCluePicture(GameObject obj){
